@@ -382,7 +382,7 @@ def relationship(genealogy_id):
                         SELECT
                             m.id,
                             ARRAY[m.id] AS path_ids,
-                            ARRAY[m.name] AS path_names,
+                            ARRAY[m.name::TEXT] AS path_names,
                             0 AS depth
                         FROM members m
                         WHERE m.id = %s AND m.genealogy_id = %s
@@ -392,7 +392,7 @@ def relationship(genealogy_id):
                         SELECT
                             parent.id,
                             up_a.path_ids || parent.id,
-                            up_a.path_names || parent.name,
+                            up_a.path_names || parent.name::TEXT,
                             up_a.depth + 1
                         FROM up_a
                         JOIN parent_child pc ON pc.child_id = up_a.id
@@ -405,7 +405,7 @@ def relationship(genealogy_id):
                         SELECT
                             m.id,
                             ARRAY[m.id] AS path_ids,
-                            ARRAY[m.name] AS path_names,
+                            ARRAY[m.name::TEXT] AS path_names,
                             0 AS depth
                         FROM members m
                         WHERE m.id = %s AND m.genealogy_id = %s
@@ -415,7 +415,7 @@ def relationship(genealogy_id):
                         SELECT
                             parent.id,
                             up_b.path_ids || parent.id,
-                            up_b.path_names || parent.name,
+                            up_b.path_names || parent.name::TEXT,
                             up_b.depth + 1
                         FROM up_b
                         JOIN parent_child pc ON pc.child_id = up_b.id
@@ -437,7 +437,7 @@ def relationship(genealogy_id):
                                     SELECT array_agg(value ORDER BY ord DESC)
                                     FROM unnest(up_b.path_names) WITH ORDINALITY AS t(value, ord)
                                     WHERE ord < cardinality(up_b.path_names)
-                                ), ARRAY[]::VARCHAR[]) AS path_names,
+                                ), ARRAY[]::TEXT[]) AS path_names,
                             up_a.depth + up_b.depth AS depth
                         FROM up_a
                         JOIN up_b ON up_b.id = up_a.id
@@ -445,7 +445,7 @@ def relationship(genealogy_id):
                     spouse_paths AS (
                         SELECT
                             ARRAY[a.id, b.id] AS path_ids,
-                            ARRAY[a.name, b.name] AS path_names,
+                            ARRAY[a.name::TEXT, b.name::TEXT] AS path_names,
                             1 AS depth
                         FROM members a
                         JOIN members b ON b.id = %s AND b.genealogy_id = %s
@@ -493,6 +493,115 @@ def relationship(genealogy_id):
         member_a_id=member_a_id,
         member_b_id=member_b_id,
         path=path,
+    )
+
+
+@query_bp.route("/stats")
+@login_required
+def stats(genealogy_id):
+    genealogy = get_accessible_genealogy(genealogy_id)
+    db = get_db()
+    with db.cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                generation,
+                COUNT(*) AS member_count,
+                ROUND(AVG(death_year - birth_year), 2) AS avg_lifespan
+            FROM members
+            WHERE genealogy_id = %s
+              AND birth_year IS NOT NULL
+              AND death_year IS NOT NULL
+            GROUP BY generation
+            HAVING COUNT(*) > 0
+            ORDER BY avg_lifespan DESC, generation
+            LIMIT 1
+            """,
+            (genealogy_id,),
+        )
+        longest_life_generation = cur.fetchone()
+
+        cur.execute(
+            """
+            SELECT
+                m.id,
+                m.name,
+                m.birth_year,
+                EXTRACT(YEAR FROM CURRENT_DATE)::INT - m.birth_year AS age,
+                m.generation
+            FROM members m
+            WHERE m.genealogy_id = %s
+              AND m.gender = 'M'
+              AND m.birth_year IS NOT NULL
+              AND EXTRACT(YEAR FROM CURRENT_DATE)::INT - m.birth_year > 50
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM marriages ma
+                  WHERE ma.husband_id = m.id OR ma.wife_id = m.id
+              )
+            ORDER BY age DESC, m.id
+            LIMIT 200
+            """,
+            (genealogy_id,),
+        )
+        older_unmarried_men = [
+            {
+                "id": row[0],
+                "name": row[1],
+                "birth_year": row[2],
+                "age": row[3],
+                "generation": row[4],
+            }
+            for row in cur.fetchall()
+        ]
+
+        cur.execute(
+            """
+            WITH generation_avg AS (
+                SELECT
+                    genealogy_id,
+                    generation,
+                    AVG(birth_year) AS avg_birth_year
+                FROM members
+                WHERE genealogy_id = %s
+                  AND birth_year IS NOT NULL
+                GROUP BY genealogy_id, generation
+            )
+            SELECT
+                m.id,
+                m.name,
+                m.generation,
+                m.birth_year,
+                ROUND(ga.avg_birth_year, 2) AS avg_birth_year
+            FROM members m
+            JOIN generation_avg ga
+                ON ga.genealogy_id = m.genealogy_id
+               AND ga.generation = m.generation
+            WHERE m.genealogy_id = %s
+              AND m.birth_year IS NOT NULL
+              AND m.birth_year < ga.avg_birth_year
+            ORDER BY m.generation, m.birth_year, m.id
+            LIMIT 200
+            """,
+            (genealogy_id, genealogy_id),
+        )
+        earlier_than_generation_avg = [
+            {
+                "id": row[0],
+                "name": row[1],
+                "generation": row[2],
+                "birth_year": row[3],
+                "avg_birth_year": row[4],
+            }
+            for row in cur.fetchall()
+        ]
+
+    return render_template(
+        "query/stats.html",
+        genealogy=genealogy,
+        longest_life_generation=longest_life_generation,
+        older_unmarried_men=older_unmarried_men,
+        earlier_than_generation_avg=earlier_than_generation_avg,
     )
 
 

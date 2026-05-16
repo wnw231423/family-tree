@@ -35,6 +35,7 @@
             <a class="btn btn-outline-primary" href="{{ url_for('query.ancestors', genealogy_id=genealogy.id) }}">祖先查询</a>
             <a class="btn btn-outline-primary" href="{{ url_for('query.descendants', genealogy_id=genealogy.id) }}">后代查询</a>
             <a class="btn btn-outline-primary" href="{{ url_for('query.relationship', genealogy_id=genealogy.id) }}">亲缘关系查询</a>
+            <a class="btn btn-outline-primary" href="{{ url_for('query.stats', genealogy_id=genealogy.id) }}">统计查询</a>
         </div>
     </div>
 </div>

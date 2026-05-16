@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}统计查询 - {{ genealogy.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-1">统计查询</h1>
+        <div class="text-secondary">{{ genealogy.name }}</div>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('genealogy.detail', genealogy_id=genealogy.id) }}">返回族谱</a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h2 class="h5">平均寿命最长的一代人</h2>
+        {% if longest_life_generation %}
+            <div class="row text-center g-2">
+                <div class="col-md-4">
+                    <div class="border rounded bg-light py-2">
+                        <div class="fw-semibold">第 {{ longest_life_generation[0] }} 代</div>
+                        <div class="text-secondary small">辈分</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="border rounded bg-light py-2">
+                        <div class="fw-semibold">{{ longest_life_generation[1] }}</div>
+                        <div class="text-secondary small">统计人数</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="border rounded bg-light py-2">
+                        <div class="fw-semibold">{{ longest_life_generation[2] }} 岁</div>
+                        <div class="text-secondary small">平均寿命</div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-secondary">暂无可统计的生卒年数据。</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h2 class="h5">年龄超过 50 岁且没有配偶的男性成员</h2>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>姓名</th>
+                    <th>出生年</th>
+                    <th>年龄</th>
+                    <th>代数</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for member in older_unmarried_men %}
+                    <tr>
+                        <td>{{ member.id }}</td>
+                        <td><a href="{{ url_for('member.detail', genealogy_id=genealogy.id, member_id=member.id) }}">{{ member.name }}</a></td>
+                        <td>{{ member.birth_year }}</td>
+                        <td>{{ member.age }}</td>
+                        <td>{{ member.generation }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" class="text-center text-secondary py-4">暂无查询结果。</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="text-secondary small mt-2">页面最多显示前 200 条结果。</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h2 class="h5">出生年份早于该辈分平均出生年份的成员</h2>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>姓名</th>
+                    <th>代数</th>
+                    <th>出生年</th>
+                    <th>本代平均出生年</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for member in earlier_than_generation_avg %}
+                    <tr>
+                        <td>{{ member.id }}</td>
+                        <td><a href="{{ url_for('member.detail', genealogy_id=genealogy.id, member_id=member.id) }}">{{ member.name }}</a></td>
+                        <td>{{ member.generation }}</td>
+                        <td>{{ member.birth_year }}</td>
+                        <td>{{ member.avg_birth_year }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" class="text-center text-secondary py-4">暂无查询结果。</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="text-secondary small mt-2">页面最多显示前 200 条结果。</div>
+    </div>
+</div>
+{% endblock %}

@@ -135,7 +135,7 @@ up_a AS (
     SELECT
         m.id,
         ARRAY[m.id] AS path_ids,
-        ARRAY[m.name] AS path_names,
+        ARRAY[m.name::TEXT] AS path_names,
         0 AS depth
     FROM members m
     WHERE m.id = :member_a_id::INT
@@ -146,7 +146,7 @@ up_a AS (
     SELECT
         parent.id,
         up_a.path_ids || parent.id,
-        up_a.path_names || parent.name,
+        up_a.path_names || parent.name::TEXT,
         up_a.depth + 1
     FROM up_a
     JOIN parent_child pc ON pc.child_id = up_a.id
@@ -159,7 +159,7 @@ up_b AS (
     SELECT
         m.id,
         ARRAY[m.id] AS path_ids,
-        ARRAY[m.name] AS path_names,
+        ARRAY[m.name::TEXT] AS path_names,
         0 AS depth
     FROM members m
     WHERE m.id = :member_b_id::INT
@@ -170,7 +170,7 @@ up_b AS (
     SELECT
         parent.id,
         up_b.path_ids || parent.id,
-        up_b.path_names || parent.name,
+        up_b.path_names || parent.name::TEXT,
         up_b.depth + 1
     FROM up_b
     JOIN parent_child pc ON pc.child_id = up_b.id
@@ -192,7 +192,7 @@ common_ancestor_paths AS (
                 SELECT array_agg(value ORDER BY ord DESC)
                 FROM unnest(up_b.path_names) WITH ORDINALITY AS t(value, ord)
                 WHERE ord < cardinality(up_b.path_names)
-            ), ARRAY[]::VARCHAR[]) AS path_names,
+            ), ARRAY[]::TEXT[]) AS path_names,
         up_a.depth + up_b.depth AS depth
     FROM up_a
     JOIN up_b ON up_b.id = up_a.id
@@ -200,7 +200,7 @@ common_ancestor_paths AS (
 spouse_paths AS (
     SELECT
         ARRAY[a.id, b.id] AS path_ids,
-        ARRAY[a.name, b.name] AS path_names,
+        ARRAY[a.name::TEXT, b.name::TEXT] AS path_names,
         1 AS depth
     FROM members a
     JOIN members b
