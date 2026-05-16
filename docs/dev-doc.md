@@ -96,6 +96,7 @@
 | chk_lifetime | 成员出生年份必须早于卒年 |
 | chk_birth_year、chk_death_year | 出生年份、卒年必须为正数 |
 | chk_not_self | 亲子关系中 parent_id 与 child_id 不能相同 |
+| chk_not_same | 婚姻关系中 husband_id 与 wife_id 不能相同 |
 | chk_marriage_period | 婚姻开始年份不能晚于结束年份 |
 | trg_add_genealogy_owner | 新建族谱后自动把创建者写入 genealogy_users |
 | trg_marriage_members | 校验婚姻双方性别及所属族谱 |
@@ -216,9 +217,9 @@ ORDER BY great_grandchild.id;
 
 ## 七、部分选择的依据
 
-本项目为数据库课程大作业，项目团队规模为 2 人，交付后无持续迭代计划。系统核心工作集中在关系建模、约束、Recursive CTE 查询、批量数据生成与索引分析，因此采用服务端渲染页面与 psycopg2 原生 SQL，以便直接展示数据库设计和 SQL 实现。
+本项目为数据库课程大作业，项目团队规模为 2 人，交付后无持续迭代计划。系统核心工作集中在关系建模、约束、Recursive CTE 查询、批量数据生成与索引分析，因此采用服务端渲染页面与 psycopg2 原生 SQL，以直接展示数据库设计和 SQL 实现。
 
-前端采用 Bootstrap CDN 与 Jinja2 模板，能够满足登录、CRUD、树形预览和查询结果展示需求。数据生成采用 Python 脚本输出 CSV，再通过 PostgreSQL COPY 导入，便于复现实验数据和提交工具源码。项目通过 Docker Compose 启动 Flask 应用容器和 PostgreSQL 数据库容器，数据库容器首次启动时执行 `sql/schema.sql` 完成初始化。
+前端采用 Bootstrap CDN 与 Jinja2 模板，能够满足登录、CRUD、树形预览和查询结果展示需求。数据生成采用 Python 脚本输出 CSV，再通过 PostgreSQL COPY 导入，便于复现实验数据和提交工具源码。项目通过 Docker Compose 启动 Flask 应用容器和 PostgreSQL 数据库容器。数据库容器首次创建数据卷时执行 `sql/schema.sql` 完成初始化；若数据卷已存在，需要手动导入 schema 或重建数据库数据卷。
 
 ## 八、预期项目结构
 
@@ -257,6 +258,7 @@ family-tree/
 │   ├── queries.sql
 │   └── schema.sql
 ├── .env.example
+├── .gitignore
 ├── config.py
 ├── docker-compose.yml
 ├── Dockerfile

@@ -4,27 +4,23 @@
 
 ## 第一次启动
 
-### 1. 启动 Docker Desktop
+### 1. 进入项目目录
 
-先打开 Docker Desktop，等待 Docker Engine 正常运行。若 Docker Desktop 提示 WSL 需要更新，应先按提示完成 WSL 更新并重启 Docker Desktop。
-
-### 2. 进入项目目录
-
-```powershell
-cd D:\family-tree
+```bash
+cd /path/to/family-tree
 ```
 
-### 3. 构建并启动容器
+### 2. 构建并启动容器
 
-```powershell
+```bash
 docker compose up -d --build
 ```
 
 首次启动会拉取 `postgres:16` 镜像并构建 Flask 应用镜像，耗时取决于网络情况。
 
-### 4. 查看容器状态
+### 3. 查看容器状态
 
-```powershell
+```bash
 docker compose ps
 ```
 
@@ -32,42 +28,26 @@ docker compose ps
 
 如果应用启动较慢，可以查看日志：
 
-```powershell
+```bash
 docker compose logs -f db
 docker compose logs -f app
 ```
 
-### 5. 生成模拟数据
+### 4. 生成模拟数据
 
-```powershell
-python data/generate.py
+```bash
+docker compose exec app python data/generate.py
 ```
 
 默认会生成 10 个族谱、102,000 名成员，其中第一个族谱包含 50,000 名成员。
 
-### 6. 复制 CSV 到 app 容器
+### 5. 导入模拟数据
 
-先确认 app 容器名：
-
-```powershell
-docker compose ps
-```
-
-若 app 容器名为 `family-tree-app-1`，执行：
-
-```powershell
-docker cp data/output family-tree-app-1:/app/data/output
-```
-
-若容器名不同，将命令中的 `family-tree-app-1` 替换为实际容器名。
-
-### 7. 导入模拟数据
-
-```powershell
+```bash
 docker compose exec app python data/import_csv.py --truncate
 ```
 
-### 8. 打开系统
+### 6. 打开系统
 
 浏览器访问：
 
@@ -86,8 +66,8 @@ http://localhost:5000
 
 已经完成首次初始化后，下次只需要：
 
-```powershell
-cd D:\family-tree
+```bash
+cd /path/to/family-tree
 docker compose up -d
 ```
 
@@ -101,42 +81,34 @@ http://localhost:5000
 
 修改 Python 或模板代码后，执行：
 
-```powershell
+```bash
 docker compose up -d --build app
-```
-
-如果 Docker Desktop 构建接口报错，可以直接复制修改过的文件进 app 容器并重启 app，例如：
-
-```powershell
-docker cp app/query.py family-tree-app-1:/app/app/query.py
-docker cp app/templates/query/tree.html family-tree-app-1:/app/app/templates/query/tree.html
-docker compose restart app
 ```
 
 ## 常用命令
 
 查看状态：
 
-```powershell
+```bash
 docker compose ps
 ```
 
 查看日志：
 
-```powershell
+```bash
 docker compose logs -f app
 docker compose logs -f db
 ```
 
 停止容器：
 
-```powershell
+```bash
 docker compose down
 ```
 
 停止容器并删除数据库数据：
 
-```powershell
+```bash
 docker compose down -v
 ```
 
@@ -144,16 +116,15 @@ docker compose down -v
 
 导出某个成员分支备份：
 
-```powershell
+```bash
 docker compose exec app python data/export_branch.py 1 --output data/output/branch_backup.csv
-docker cp family-tree-app-1:/app/data/output/branch_backup.csv data/output/branch_backup.csv
+docker compose cp app:/app/data/output/branch_backup.csv data/output/branch_backup.csv
 ```
 
 ## 本地代码检查
 
-```powershell
-$files = @('run.py','config.py') + (Get-ChildItem app,data -Filter *.py | ForEach-Object { $_.FullName })
-python -m py_compile @files
+```bash
+PYTHONPYCACHEPREFIX=/tmp/family-tree-pycache python3 -m py_compile run.py config.py app/*.py data/*.py
 ```
 
 ## 使用提示
