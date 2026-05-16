@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ genealogy.name }} - 族谱管理系统{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h1 class="h3 mb-1">{{ genealogy.name }}</h1>
+        <div class="text-secondary">{{ genealogy.surname }}氏 · 修谱时间：{{ genealogy.compiled_at or "未填写" }}</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="{{ url_for('genealogy.edit', genealogy_id=genealogy.id) }}">编辑</a>
+        <a class="btn btn-outline-secondary" href="{{ url_for('routes.dashboard') }}">Dashboard</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <div class="card"><div class="card-body"><div class="h4">{{ stats.total_count }}</div><div class="text-secondary">总人数</div></div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card"><div class="card-body"><div class="h4">{{ stats.male_count }}</div><div class="text-secondary">男性</div></div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card"><div class="card-body"><div class="h4">{{ stats.female_count }}</div><div class="text-secondary">女性</div></div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card"><div class="card-body"><div class="h4">{{ stats.max_generation }}</div><div class="text-secondary">最大代数</div></div></div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-primary" href="{{ url_for('member.list_members', genealogy_id=genealogy.id) }}">成员管理</a>
+            <a class="btn btn-outline-primary" href="{{ url_for('query.tree', genealogy_id=genealogy.id) }}">树形预览</a>
+            <a class="btn btn-outline-primary" href="{{ url_for('query.ancestors', genealogy_id=genealogy.id) }}">祖先查询</a>
+            <a class="btn btn-outline-primary" href="{{ url_for('query.descendants', genealogy_id=genealogy.id) }}">后代查询</a>
+            <a class="btn btn-outline-primary" href="{{ url_for('query.relationship', genealogy_id=genealogy.id) }}">亲缘关系查询</a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5">协作者</h2>
+                <table class="table align-middle">
+                    <thead><tr><th>ID</th><th>用户名</th><th>角色</th></tr></thead>
+                    <tbody>
+                    {% for user in collaborators %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ "创建者" if user.role == "owner" else "协作者" }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5">邀请协作</h2>
+                <form method="post" action="{{ url_for('genealogy.invite', genealogy_id=genealogy.id) }}">
+                    <div class="input-group">
+                        <input class="form-control" name="username" placeholder="用户名" required>
+                        <button class="btn btn-primary" type="submit">邀请</button>
+                    </div>
+                </form>
+                <hr>
+                <form method="post" action="{{ url_for('genealogy.delete', genealogy_id=genealogy.id) }}" onsubmit="return confirm('确认删除该族谱及其全部成员？');">
+                    <button class="btn btn-outline-danger" type="submit">删除族谱</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

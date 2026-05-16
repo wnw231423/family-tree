@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}后代查询 - {{ genealogy.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-1">直系后代查询</h1>
+        <div class="text-secondary">{{ genealogy.name }}</div>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('genealogy.detail', genealogy_id=genealogy.id) }}">返回族谱</a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form class="row g-2" method="get">
+            <div class="col-md-8">
+                <input class="form-control" name="member_id" type="number" min="1" value="{{ member_id or '' }}" placeholder="成员 ID">
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-primary w-100" type="submit">查询后代</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>姓名</th>
+                <th>性别</th>
+                <th>生卒年</th>
+                <th>代数</th>
+                <th>距查询成员</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for item in descendants %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td><a href="{{ url_for('member.detail', genealogy_id=genealogy.id, member_id=item.id) }}">{{ item.name }}</a></td>
+                    <td>{{ "男" if item.gender == "M" else "女" }}</td>
+                    <td>{{ item.birth_year or "" }}{% if item.birth_year or item.death_year %} - {% endif %}{{ item.death_year or "" }}</td>
+                    <td>{{ item.generation }}</td>
+                    <td>{{ item.depth }} 代</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="text-center text-secondary py-4">暂无查询结果。</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

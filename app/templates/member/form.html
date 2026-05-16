@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{% if member %}编辑成员{% else %}新增成员{% endif %} - {{ genealogy.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">{% if member %}编辑成员{% else %}新增成员{% endif %}</h1>
+    <a class="btn btn-outline-secondary" href="{{ url_for('member.list_members', genealogy_id=genealogy.id) }}">返回成员列表</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label" for="name">姓名</label>
+                    <input class="form-control" id="name" name="name" maxlength="50" value="{{ member.name if member else '' }}" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label" for="gender">性别</label>
+                    <select class="form-select" id="gender" name="gender" required>
+                        <option value="M" {% if member and member.gender == "M" %}selected{% endif %}>男</option>
+                        <option value="F" {% if member and member.gender == "F" %}selected{% endif %}>女</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label" for="birth_year">出生年</label>
+                    <input class="form-control" id="birth_year" name="birth_year" type="number" min="1" value="{{ member.birth_year if member and member.birth_year else '' }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label" for="death_year">卒年</label>
+                    <input class="form-control" id="death_year" name="death_year" type="number" min="1" value="{{ member.death_year if member and member.death_year else '' }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label" for="generation">代数</label>
+                    <input class="form-control" id="generation" name="generation" type="number" min="1" value="{{ member.generation if member else 1 }}" required>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="bio">生平简介</label>
+                    <textarea class="form-control" id="bio" name="bio" rows="4">{{ member.bio if member and member.bio else '' }}</textarea>
+                </div>
+            </div>
+            <div class="mt-4">
+                <button class="btn btn-primary" type="submit">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

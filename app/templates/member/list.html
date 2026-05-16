@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}成员管理 - {{ genealogy.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-1">成员管理</h1>
+        <div class="text-secondary">{{ genealogy.name }}</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-primary" href="{{ url_for('member.create', genealogy_id=genealogy.id) }}">新增成员</a>
+        <a class="btn btn-outline-secondary" href="{{ url_for('genealogy.detail', genealogy_id=genealogy.id) }}">返回族谱</a>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form class="row g-2" method="get">
+            <div class="col-md-8">
+                <input class="form-control" name="q" value="{{ keyword }}" placeholder="按姓名模糊查找">
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-primary w-100" type="submit">查找</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>姓名</th>
+                <th>性别</th>
+                <th>生卒年</th>
+                <th>代数</th>
+                <th>子女数</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for member in members %}
+                <tr>
+                    <td>{{ member.id }}</td>
+                    <td>{{ member.name }}</td>
+                    <td>{{ "男" if member.gender == "M" else "女" }}</td>
+                    <td>{{ member.birth_year or "" }}{% if member.birth_year or member.death_year %} - {% endif %}{{ member.death_year or "" }}</td>
+                    <td>{{ member.generation }}</td>
+                    <td>{{ member.child_count }}</td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('member.detail', genealogy_id=genealogy.id, member_id=member.id) }}">详情</a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="7" class="text-center text-secondary py-4">暂无成员</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

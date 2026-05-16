@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "macros/tree.html" import render_tree with context %}
+{% block title %}祖先查询 - {{ genealogy.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-1">人物祖先查询</h1>
+        <div class="text-secondary">{{ genealogy.name }}</div>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('genealogy.detail', genealogy_id=genealogy.id) }}">返回族谱</a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form class="row g-2" method="get">
+            <div class="col-md-8">
+                <input class="form-control" name="member_id" type="number" min="1" value="{{ member_id or '' }}" placeholder="成员 ID">
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-primary w-100" type="submit">查询祖先</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="tree">
+            {% if root %}
+                {{ render_tree(root) }}
+            {% else %}
+                <div class="text-secondary">请输入成员 ID 进行查询。</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

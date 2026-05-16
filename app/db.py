@@ -1,7 +1,8 @@
 import time
 import psycopg2
 from psycopg2 import pool
-from flask import current_app, g
+from psycopg2.extensions import TRANSACTION_STATUS_IDLE
+from flask import g
 
 connection_pool = None
 
@@ -13,13 +14,15 @@ def init_pool(app):
     while retries > 0:
         try:
             connection_pool = pool.ThreadedConnectionPool(1, 10, **db_params)
-            app.logger.info("数据库连接池初始化成功")
+            app.logger.info("Database connection pool initialized.")
             return
         except psycopg2.OperationalError:
             retries -= 1
             if retries == 0:
                 raise
-            app.logger.warning(f"数据库未就绪，{retries} 次重试……")
+            app.logger.warning(
+                "Database is not ready. Retrying %s more time(s).", retries
+            )
             time.sleep(2)
 
 
@@ -32,4 +35,6 @@ def get_db():
 def close_db(e=None):
     db = g.pop('db', None)
     if db is not None:
+        if db.get_transaction_status() != TRANSACTION_STATUS_IDLE:
+            db.rollback()
         connection_pool.putconn(db)

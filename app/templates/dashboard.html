@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - 族谱管理系统{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-1">Dashboard</h1>
+        <div class="text-secondary">显示当前用户创建或受邀参与的族谱。</div>
+    </div>
+    <a class="btn btn-primary" href="{{ url_for('genealogy.create') }}">新建族谱</a>
+</div>
+
+{% if genealogies %}
+    <div class="row g-3">
+        {% for item in genealogies %}
+            <div class="col-md-6 col-xl-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <h2 class="h5 mb-1">{{ item.name }}</h2>
+                            <span class="badge text-bg-light">{{ item.surname }}氏</span>
+                        </div>
+                        <div class="text-secondary small mb-3">
+                            修谱时间：{{ item.compiled_at or "未填写" }}
+                        </div>
+                        <div class="row text-center g-2 mb-3">
+                            <div class="col">
+                                <div class="border rounded py-2 bg-light">
+                                    <div class="fw-semibold">{{ item.member_count }}</div>
+                                    <div class="text-secondary small">总人数</div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="border rounded py-2 bg-light">
+                                    <div class="fw-semibold">{{ item.male_count }} / {{ item.female_count }}</div>
+                                    <div class="text-secondary small">男 / 女</div>
+                                </div>
+                            </div>
+                        </div>
+                        <a class="btn btn-outline-primary w-100" href="{{ url_for('genealogy.detail', genealogy_id=item.id) }}">进入族谱</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <h2 class="h5">暂无族谱</h2>
+            <p class="text-secondary">创建一个族谱后即可开始录入成员与关系。</p>
+            <a class="btn btn-primary" href="{{ url_for('genealogy.create') }}">新建族谱</a>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

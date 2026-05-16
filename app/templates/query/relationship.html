@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}亲缘关系查询 - {{ genealogy.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-1">人物亲缘关系查询</h1>
+        <div class="text-secondary">{{ genealogy.name }}</div>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('genealogy.detail', genealogy_id=genealogy.id) }}">返回族谱</a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form class="row g-2" method="get">
+            <div class="col-md-5">
+                <input class="form-control" name="member_a_id" type="number" min="1" value="{{ member_a_id or '' }}" placeholder="成员 A ID">
+            </div>
+            <div class="col-md-5">
+                <input class="form-control" name="member_b_id" type="number" min="1" value="{{ member_b_id or '' }}" placeholder="成员 B ID">
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" type="submit">查询</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if path %}
+    <div class="card">
+        <div class="card-body">
+            <h2 class="h5">查询结果</h2>
+            <div class="mb-2">链路长度：{{ path.depth }}</div>
+            <div class="border rounded p-3 bg-light">{{ path.names }}</div>
+            <div class="text-secondary small mt-2">成员 ID 链路：{{ path.ids }}</div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

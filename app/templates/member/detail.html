@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ member.name }} - {{ genealogy.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h1 class="h3 mb-1">{{ member.name }}</h1>
+        <div class="text-secondary">
+            ID {{ member.id }} · {{ "男" if member.gender == "M" else "女" }} · 第 {{ member.generation }} 代
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="{{ url_for('member.edit', genealogy_id=genealogy.id, member_id=member.id) }}">编辑</a>
+        <a class="btn btn-outline-secondary" href="{{ url_for('member.list_members', genealogy_id=genealogy.id) }}">成员列表</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2 class="h5">基础信息</h2>
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">生卒年</dt>
+                    <dd class="col-sm-9">{{ member.birth_year or "未知" }} - {{ member.death_year or "在世或未知" }}</dd>
+                    <dt class="col-sm-3">生平简介</dt>
+                    <dd class="col-sm-9">{{ member.bio or "未填写" }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2 class="h5">父母</h2>
+                {% for parent in parents %}
+                    <a class="btn btn-sm btn-outline-secondary me-2 mb-2" href="{{ url_for('member.detail', genealogy_id=genealogy.id, member_id=parent.id) }}">
+                        {{ parent.name }} #{{ parent.id }}
+                    </a>
+                {% else %}
+                    <div class="text-secondary mb-2">暂无父母记录。</div>
+                {% endfor %}
+                <form class="input-group mt-2" method="post" action="{{ url_for('member.add_parent', genealogy_id=genealogy.id, member_id=member.id) }}">
+                    <input class="form-control" name="parent_id" type="number" min="1" placeholder="父亲或母亲 ID" required>
+                    <button class="btn btn-primary" type="submit">添加父母</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5">子女</h2>
+                {% for child in children %}
+                    <a class="btn btn-sm btn-outline-secondary me-2 mb-2" href="{{ url_for('member.detail', genealogy_id=genealogy.id, member_id=child.id) }}">
+                        {{ child.name }} #{{ child.id }}
+                    </a>
+                {% else %}
+                    <div class="text-secondary mb-2">暂无子女记录。</div>
+                {% endfor %}
+                <form class="input-group mt-2" method="post" action="{{ url_for('member.add_child', genealogy_id=genealogy.id, member_id=member.id) }}">
+                    <input class="form-control" name="child_id" type="number" min="1" placeholder="子女 ID" required>
+                    <button class="btn btn-primary" type="submit">添加子女</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2 class="h5">配偶</h2>
+                {% for spouse in spouses %}
+                    <div class="border rounded p-2 mb-2">
+                        <a href="{{ url_for('member.detail', genealogy_id=genealogy.id, member_id=spouse.id) }}">{{ spouse.name }} #{{ spouse.id }}</a>
+                        <span class="text-secondary small">
+                            {{ spouse.start_year or "未知" }} - {{ spouse.end_year or "持续或未知" }}
+                        </span>
+                    </div>
+                {% else %}
+                    <div class="text-secondary mb-2">暂无配偶记录。</div>
+                {% endfor %}
+                <form method="post" action="{{ url_for('member.add_spouse', genealogy_id=genealogy.id, member_id=member.id) }}">
+                    <div class="mb-2">
+                        <input class="form-control" name="spouse_id" type="number" min="1" placeholder="配偶 ID" required>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col">
+                            <input class="form-control" name="start_year" type="number" min="1" placeholder="结婚年">
+                        </div>
+                        <div class="col">
+                            <input class="form-control" name="end_year" type="number" min="1" placeholder="结束年">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary mt-2 w-100" type="submit">添加配偶</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5">查询入口</h2>
+                <div class="d-grid gap-2">
+                    <a class="btn btn-outline-primary" href="{{ url_for('query.tree', genealogy_id=genealogy.id, root_id=member.id) }}">以此人为根预览分支</a>
+                    <a class="btn btn-outline-primary" href="{{ url_for('query.ancestors', genealogy_id=genealogy.id, member_id=member.id) }}">查询祖先</a>
+                    <a class="btn btn-outline-primary" href="{{ url_for('query.descendants', genealogy_id=genealogy.id, member_id=member.id) }}">查询后代</a>
+                </div>
+                <hr>
+                <form method="post" action="{{ url_for('member.delete', genealogy_id=genealogy.id, member_id=member.id) }}" onsubmit="return confirm('确认删除该成员？');">
+                    <button class="btn btn-outline-danger w-100" type="submit">删除成员</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
