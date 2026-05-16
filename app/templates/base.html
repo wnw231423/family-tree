@@ -12,30 +12,38 @@
             --tree-line: #aab3c2;
             --tree-card-border: #d8dee8;
             --tree-card-bg: #fff;
+            --tree-muted: #667085;
         }
         .tree-chart {
             overflow: auto;
-            padding: 1rem .5rem 1.5rem;
+            padding: 1.25rem 1rem 1.75rem;
         }
         .tree-chart ul {
             display: flex;
+            gap: 1.5rem;
             justify-content: center;
             list-style: none;
             margin: 0;
-            padding: 1.35rem 0 0;
+            min-width: 100%;
+            padding: 1.6rem 0 0;
             position: relative;
+            width: max-content;
         }
         .tree-chart ul ul::before {
             border-left: 1px solid var(--tree-line);
             content: "";
-            height: 1.35rem;
+            height: 1.6rem;
             left: 50%;
             position: absolute;
             top: 0;
         }
         .tree-chart li {
-            min-width: 12rem;
-            padding: 1.35rem .65rem 0;
+            align-items: center;
+            display: flex;
+            flex: 0 0 auto;
+            flex-direction: column;
+            min-width: max-content;
+            padding: 1.6rem 0 0;
             position: relative;
             text-align: center;
         }
@@ -43,11 +51,11 @@
         .tree-chart li::after {
             border-top: 1px solid var(--tree-line);
             content: "";
-            height: 1.35rem;
+            height: 1.6rem;
             position: absolute;
             right: 50%;
             top: 0;
-            width: 50%;
+            width: calc(50% + .75rem);
         }
         .tree-chart li::after {
             border-left: 1px solid var(--tree-line);
@@ -75,53 +83,120 @@
             border-right: 1px solid var(--tree-line);
             border-radius: 0 .5rem 0 0;
         }
-        .tree-node {
+        .tree-child-groups {
+            align-items: flex-start;
+            gap: 2rem;
+        }
+        .tree-child-group {
+            padding-top: 1.6rem;
+        }
+        .tree-child-group > ul {
+            gap: 1.25rem;
+        }
+        .tree-group-label {
+            background: #eef2f7;
+            border: 1px solid #d8dee8;
+            border-radius: 999px;
+            color: var(--tree-muted);
+            font-size: .74rem;
+            line-height: 1.2;
+            margin-bottom: .4rem;
+            max-width: 11rem;
+            overflow: hidden;
+            padding: .28rem .65rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .tree-family {
+            align-items: stretch;
             background: var(--tree-card-bg);
             border: 1px solid var(--tree-card-border);
             border-radius: .5rem;
             box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
-            display: inline-block;
-            min-width: 10.5rem;
-            max-width: 12rem;
-            padding: .55rem .7rem;
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: .35rem;
+            justify-content: center;
+            max-width: 22rem;
+            min-width: 12rem;
+            padding: .5rem;
             text-align: center;
         }
-        .tree-node a {
+        .tree-person {
+            border: 1px solid #e5eaf1;
+            border-radius: .4rem;
+            min-width: 9.25rem;
+            padding: .42rem .6rem;
+        }
+        .tree-person-main {
+            border-color: transparent;
+        }
+        .tree-person a,
+        .tree-spouse-chip {
             color: #1f2937;
             display: block;
             font-weight: 600;
             text-decoration: none;
         }
-        .tree-node a:hover {
+        .tree-person a:hover,
+        .tree-spouse-chip:hover {
             color: #0d6efd;
             text-decoration: underline;
         }
-        .tree-node-male {
+        .tree-person-male {
             border-top: 3px solid #4f8cff;
         }
-        .tree-node-female {
+        .tree-person-female {
             border-top: 3px solid #f06aa6;
         }
+        .tree-marriage-line {
+            align-self: center;
+            background: #c6ceda;
+            flex: 0 0 1.1rem;
+            height: 1px;
+        }
+        .tree-remarriages {
+            border-top: 1px dashed #d8dee8;
+            display: flex;
+            flex-basis: 100%;
+            flex-wrap: wrap;
+            gap: .35rem;
+            justify-content: center;
+            padding-top: .45rem;
+        }
+        .tree-spouse-chip {
+            background: #f8fafc;
+            border: 1px solid #e5eaf1;
+            border-radius: 999px;
+            font-size: .74rem;
+            line-height: 1.2;
+            max-width: 9.5rem;
+            overflow: hidden;
+            padding: .28rem .55rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         .tree-meta {
-            color: #6c757d;
+            color: var(--tree-muted);
             font-size: .78rem;
             line-height: 1.35;
             margin-top: .25rem;
             white-space: nowrap;
         }
-        .tree-spouse,
         .tree-count {
             color: #495057;
             font-size: .76rem;
+            flex-basis: 100%;
             line-height: 1.35;
             margin-top: .25rem;
         }
-        .tree-spouse {
+        .tree-count {
             border-top: 1px dashed #d8dee8;
             padding-top: .35rem;
         }
         .tree-expand {
             display: inline-block;
+            flex-basis: 100%;
             font-size: .76rem;
             margin-top: .35rem;
             text-decoration: none;

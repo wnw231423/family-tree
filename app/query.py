@@ -8,7 +8,9 @@ from app.member import get_member, parse_int
 query_bp = Blueprint("query", __name__, url_prefix="/genealogies/<int:genealogy_id>")
 
 
-def build_tree(rows):
+def build_tree(rows, spouses_by_member=None, parents_by_child=None):
+    spouses_by_member = spouses_by_member or {}
+    parents_by_child = parents_by_child or {}
     nodes = {}
     root = None
     for row in rows:
@@ -22,8 +24,9 @@ def build_tree(rows):
             "parent_id": row[6],
             "depth": row[7],
             "child_count": row[8] if len(row) > 8 else 0,
-            "spouses": (row[9] if len(row) > 9 else []) or [],
+            "spouses": spouses_by_member.get(row[0], []),
             "children": [],
+            "child_groups": [],
         }
         nodes[node["id"]] = node
 
@@ -36,7 +39,81 @@ def build_tree(rows):
 
     for node in nodes.values():
         node["children"].sort(key=lambda item: (item["birth_year"] or 9999, item["id"]))
+        grouped_children = set()
+        for spouse in node["spouses"]:
+            children = [
+                child for child in node["children"]
+                if spouse["id"] in parents_by_child.get(child["id"], set())
+            ]
+            if children:
+                node["child_groups"].append({"spouse": spouse, "children": children})
+                grouped_children.update(child["id"] for child in children)
+
+        other_children = [
+            child for child in node["children"] if child["id"] not in grouped_children
+        ]
+        if other_children:
+            node["child_groups"].append({"spouse": None, "children": other_children})
+
     return root
+
+
+def fetch_tree_context(member_ids):
+    if not member_ids:
+        return {}, {}
+
+    db = get_db()
+    spouses_by_member = {member_id: [] for member_id in member_ids}
+    parents_by_child = {}
+
+    with db.cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                owner.id,
+                spouse.id,
+                spouse.name,
+                spouse.gender,
+                spouse.generation,
+                ma.start_year,
+                ma.end_year
+            FROM members owner
+            JOIN marriages ma
+                ON ma.husband_id = owner.id OR ma.wife_id = owner.id
+            JOIN members spouse
+                ON spouse.id = CASE
+                    WHEN ma.husband_id = owner.id THEN ma.wife_id
+                    ELSE ma.husband_id
+                END
+            WHERE owner.id = ANY(%s)
+            ORDER BY owner.id, ma.start_year NULLS LAST, spouse.id
+            """,
+            (member_ids,),
+        )
+        for row in cur.fetchall():
+            spouses_by_member.setdefault(row[0], []).append(
+                {
+                    "id": row[1],
+                    "name": row[2],
+                    "gender": row[3],
+                    "generation": row[4],
+                    "start_year": row[5],
+                    "end_year": row[6],
+                }
+            )
+
+        cur.execute(
+            """
+            SELECT child_id, parent_id
+            FROM parent_child
+            WHERE child_id = ANY(%s)
+            """,
+            (member_ids,),
+        )
+        for child_id, parent_id in cur.fetchall():
+            parents_by_child.setdefault(child_id, set()).add(parent_id)
+
+    return spouses_by_member, parents_by_child
 
 
 def get_default_root(genealogy_id):
@@ -150,18 +227,7 @@ def tree(genealogy_id):
                     JOIN members child ON child.id = pc.child_id
                     WHERE pc.parent_id = ranked.id
                       AND child.genealogy_id = %s
-                ) AS child_count,
-                ARRAY(
-                    SELECT spouse.name || ' #' || spouse.id
-                    FROM marriages ma
-                    JOIN members spouse
-                        ON spouse.id = CASE
-                            WHEN ma.husband_id = ranked.id THEN ma.wife_id
-                            ELSE ma.husband_id
-                        END
-                    WHERE ma.husband_id = ranked.id OR ma.wife_id = ranked.id
-                    ORDER BY ma.start_year NULLS LAST, spouse.id
-                ) AS spouses
+                ) AS child_count
             FROM ranked
             WHERE rn = 1
             ORDER BY depth, generation, birth_year NULLS LAST, id
@@ -170,7 +236,9 @@ def tree(genealogy_id):
         )
         rows = cur.fetchall()
 
-    root = build_tree(rows) if rows else None
+    member_ids = [row[0] for row in rows]
+    spouses_by_member, parents_by_child = fetch_tree_context(member_ids)
+    root = build_tree(rows, spouses_by_member, parents_by_child) if rows else None
     if root is None:
         flash("根成员不存在或无权访问。", "danger")
 

@@ -1,15 +1,32 @@
 {% macro render_member_node(node) %}
     <li>
-        <div class="tree-node {{ 'tree-node-male' if node.gender == 'M' else 'tree-node-female' }}">
-            <a href="{{ url_for('member.detail', genealogy_id=genealogy.id, member_id=node.id) }}">{{ node.name }}</a>
-            <div class="tree-meta">
-                #{{ node.id }} · {{ "男" if node.gender == "M" else "女" }} · 第 {{ node.generation }} 代
+        <div class="tree-family">
+            <div class="tree-person tree-person-main {{ 'tree-person-male' if node.gender == 'M' else 'tree-person-female' }}">
+                <a href="{{ url_for('member.detail', genealogy_id=genealogy.id, member_id=node.id) }}">{{ node.name }}</a>
+                <div class="tree-meta">
+                    #{{ node.id }} · {{ "男" if node.gender == "M" else "女" }} · 第 {{ node.generation }} 代
+                </div>
             </div>
-            {% if node.spouses %}
-                <div class="tree-spouse">
-                    配偶：{{ node.spouses | join("、") }}
+
+            {% if node.spouses|length == 1 %}
+                {% set spouse = node.spouses[0] %}
+                <div class="tree-marriage-line" aria-hidden="true"></div>
+                <div class="tree-person {{ 'tree-person-male' if spouse.gender == 'M' else 'tree-person-female' }}">
+                    <a href="{{ url_for('member.detail', genealogy_id=genealogy.id, member_id=spouse.id) }}">{{ spouse.name }}</a>
+                    <div class="tree-meta">
+                        #{{ spouse.id }} · {{ "男" if spouse.gender == "M" else "女" }} · 第 {{ spouse.generation }} 代
+                    </div>
+                </div>
+            {% elif node.spouses|length > 1 %}
+                <div class="tree-remarriages">
+                    {% for spouse in node.spouses %}
+                        <a class="tree-spouse-chip {{ 'tree-person-male' if spouse.gender == 'M' else 'tree-person-female' }}" href="{{ url_for('member.detail', genealogy_id=genealogy.id, member_id=spouse.id) }}">
+                            {{ spouse.name }} #{{ spouse.id }}
+                        </a>
+                    {% endfor %}
                 </div>
             {% endif %}
+
             {% if node.child_count %}
                 <div class="tree-count">
                     子女 {{ node.child_count }} 人{% if node.children|length < node.child_count %}，当前显示 {{ node.children|length }} 人{% endif %}
@@ -19,10 +36,26 @@
                 </a>
             {% endif %}
         </div>
-        {% if node.children %}
-            <ul>
-                {% for child in node.children %}
-                    {{ render_member_node(child) }}
+
+        {% if node.child_groups %}
+            <ul class="tree-child-groups">
+                {% for group in node.child_groups %}
+                    <li class="tree-child-group">
+                        {% if node.child_groups|length > 1 %}
+                            <div class="tree-group-label">
+                                {% if group.spouse %}
+                                    与 {{ group.spouse.name }} 的子女
+                                {% else %}
+                                    其他子女
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        <ul>
+                            {% for child in group.children %}
+                                {{ render_member_node(child) }}
+                            {% endfor %}
+                        </ul>
+                    </li>
                 {% endfor %}
             </ul>
         {% endif %}
