@@ -15,7 +15,7 @@
     <div class="card-body">
         <form class="row g-2 align-items-center" method="post" action="{{ url_for('genealogy.import_csv') }}" enctype="multipart/form-data">
             <div class="col-lg-8">
-                <input class="form-control" type="file" name="csv_file" accept=".csv,text/csv" required>
+                <input class="form-control" type="file" name="csv_files" accept=".csv,text/csv" multiple required>
             </div>
             <div class="col-lg-4">
                 <button class="btn btn-outline-primary w-100" type="submit">导入族谱 CSV</button>

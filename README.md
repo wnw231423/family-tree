@@ -38,7 +38,7 @@ docker compose logs -f app
 如本地尚未安装 Python 依赖，先执行：
 
 ```bash
-python3 -m pip install -r requirements.txt
+python3 -m pip install -r requirements-data.txt
 ```
 
 ```bash
@@ -55,7 +55,7 @@ python3 data/generate.py --sizes 1000 --surname 陈 --name 陈氏宗谱 --compil
 
 ### 5. 导入模拟数据
 
-登录系统后，在 Dashboard 选择生成的族谱 CSV 文件并点击“导入族谱 CSV”。导入后的族谱创建者为当前登录用户。
+登录系统后，在 Dashboard 选择一个或多个族谱 CSV 文件并点击“导入族谱 CSV”。导入后的族谱创建者为当前登录用户。
 
 ### 6. 打开系统
 
@@ -143,4 +143,6 @@ PYTHONPYCACHEPREFIX=/tmp/family-tree-pycache python3 -m py_compile run.py config
 - `sql/queries.sql`：核心 SQL 查询。
 - `data/`：模拟族谱 CSV 生成脚本。
 - `docker-compose.yml`：Flask 与 PostgreSQL 容器编排。
+- `requirements.txt`：Web 应用和 Docker 镜像依赖。
+- `requirements-data.txt`：本地数据生成脚本依赖。
 - `docs/dev-doc.md`：数据库设计、功能说明和项目结构文档。

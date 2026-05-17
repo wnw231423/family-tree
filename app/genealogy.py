@@ -54,22 +54,29 @@ def create():
 @genealogy_bp.route("/import", methods=("POST",))
 @login_required
 def import_csv():
-    upload = request.files.get("csv_file")
-    if upload is None or not upload.filename:
+    uploads = [
+        upload for upload in request.files.getlist("csv_files")
+        if upload and upload.filename
+    ]
+    if not uploads:
         flash("请选择需要导入的 CSV 文件。", "danger")
         return redirect(url_for("routes.dashboard"))
 
     db = get_db()
     try:
-        genealogy_id = import_genealogy_csv(db, upload, g.user["id"])
+        genealogy_ids = []
+        for upload in uploads:
+            genealogy_ids.append(import_genealogy_csv(db, upload, g.user["id"]))
         db.commit()
     except Exception as exc:
         db.rollback()
         flash(f"导入族谱失败：{exc}", "danger")
         return redirect(url_for("routes.dashboard"))
 
-    flash("族谱已导入。", "success")
-    return redirect(url_for("genealogy.detail", genealogy_id=genealogy_id))
+    flash(f"已导入 {len(genealogy_ids)} 个族谱。", "success")
+    if len(genealogy_ids) == 1:
+        return redirect(url_for("genealogy.detail", genealogy_id=genealogy_ids[0]))
+    return redirect(url_for("routes.dashboard"))
 
 
 @genealogy_bp.route("/<int:genealogy_id>")
