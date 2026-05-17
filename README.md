@@ -35,17 +35,27 @@ docker compose logs -f app
 
 ### 4. 生成模拟数据
 
+如本地尚未安装 Python 依赖，先执行：
+
 ```bash
-docker compose exec app python data/generate.py
+python3 -m pip install -r requirements.txt
 ```
 
-默认会生成 10 个族谱、102,000 名成员，其中第一个族谱包含 50,000 名成员。
+```bash
+python3 data/generate.py
+```
+
+默认会生成 10 个族谱 CSV，共 102,000 名成员，其中第一个族谱包含 50,000 名成员。每个 CSV 文件对应一个族谱，只包含族谱、成员、亲子关系和婚姻关系数据。
+
+生成指定族谱示例：
+
+```bash
+python3 data/generate.py --sizes 1000 --surname 陈 --name 陈氏宗谱 --compiled-at 2026-05-17
+```
 
 ### 5. 导入模拟数据
 
-```bash
-docker compose exec app python data/import_csv.py --truncate
-```
+登录系统后，在 Dashboard 选择生成的族谱 CSV 文件并点击“导入族谱 CSV”。导入后的族谱创建者为当前登录用户。
 
 ### 6. 打开系统
 
@@ -114,12 +124,7 @@ docker compose down -v
 
 ## 数据导出
 
-导出某个成员分支备份：
-
-```bash
-docker compose exec app python data/export_branch.py 1 --output data/output/branch_backup.csv
-docker compose cp app:/app/data/output/branch_backup.csv data/output/branch_backup.csv
-```
+进入族谱详情页后，点击“导出 CSV”可下载该族谱的纯数据文件。导出的 CSV 不包含用户、创建者或协作者信息，可由其他用户重新导入为自己的族谱。
 
 ## 本地代码检查
 
@@ -136,6 +141,6 @@ PYTHONPYCACHEPREFIX=/tmp/family-tree-pycache python3 -m py_compile run.py config
 - `app/`：Flask 应用代码。
 - `sql/schema.sql`：数据库表、约束、触发器和索引。
 - `sql/queries.sql`：核心 SQL 查询。
-- `data/`：模拟数据生成、COPY 导入和分支导出脚本。
+- `data/`：模拟族谱 CSV 生成脚本。
 - `docker-compose.yml`：Flask 与 PostgreSQL 容器编排。
 - `docs/dev-doc.md`：数据库设计、功能说明和项目结构文档。

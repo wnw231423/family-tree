@@ -1,8 +1,18 @@
-from flask import Blueprint, flash, g, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    Response,
+    flash,
+    g,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 
 from app.access import get_accessible_genealogy, require_genealogy_access
 from app.auth import login_required
 from app.db import get_db
+from app.genealogy_io import export_genealogy_csv, import_genealogy_csv
 
 genealogy_bp = Blueprint("genealogy", __name__, url_prefix="/genealogies")
 
@@ -39,6 +49,27 @@ def create():
                 return redirect(url_for("genealogy.detail", genealogy_id=genealogy_id))
 
     return render_template("genealogy/form.html", genealogy=None)
+
+
+@genealogy_bp.route("/import", methods=("POST",))
+@login_required
+def import_csv():
+    upload = request.files.get("csv_file")
+    if upload is None or not upload.filename:
+        flash("请选择需要导入的 CSV 文件。", "danger")
+        return redirect(url_for("routes.dashboard"))
+
+    db = get_db()
+    try:
+        genealogy_id = import_genealogy_csv(db, upload, g.user["id"])
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        flash(f"导入族谱失败：{exc}", "danger")
+        return redirect(url_for("routes.dashboard"))
+
+    flash("族谱已导入。", "success")
+    return redirect(url_for("genealogy.detail", genealogy_id=genealogy_id))
 
 
 @genealogy_bp.route("/<int:genealogy_id>")
@@ -87,6 +118,22 @@ def detail(genealogy_id):
         genealogy=genealogy,
         stats=stats,
         collaborators=collaborators,
+    )
+
+
+@genealogy_bp.route("/<int:genealogy_id>/export")
+@login_required
+def export_csv(genealogy_id):
+    genealogy = get_accessible_genealogy(genealogy_id)
+    db = get_db()
+    content = export_genealogy_csv(db, genealogy_id)
+    filename = f"genealogy_{genealogy_id}.csv"
+    return Response(
+        content,
+        mimetype="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+        },
     )
 
 

@@ -7,6 +7,7 @@
         <div class="text-secondary">{{ genealogy.surname }}氏 · 修谱时间：{{ genealogy.compiled_at or "未填写" }}</div>
     </div>
     <div class="d-flex gap-2">
+        <a class="btn btn-outline-primary" href="{{ url_for('genealogy.export_csv', genealogy_id=genealogy.id) }}">导出 CSV</a>
         <a class="btn btn-outline-secondary" href="{{ url_for('genealogy.edit', genealogy_id=genealogy.id) }}">编辑</a>
         <a class="btn btn-outline-secondary" href="{{ url_for('routes.dashboard') }}">Dashboard</a>
     </div>

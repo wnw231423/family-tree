@@ -209,7 +209,10 @@ def tree(genealogy_id):
             ),
             ranked AS (
                 SELECT *,
-                       ROW_NUMBER() OVER (PARTITION BY id ORDER BY depth, parent_id NULLS FIRST) AS rn
+                       ROW_NUMBER() OVER (
+                           PARTITION BY id
+                           ORDER BY depth, parent_id NULLS FIRST
+                       ) AS rn
                 FROM branch
             )
             SELECT

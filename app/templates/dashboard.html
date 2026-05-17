@@ -6,7 +6,22 @@
         <h1 class="h3 mb-1">Dashboard</h1>
         <div class="text-secondary">显示当前用户创建或受邀参与的族谱。</div>
     </div>
-    <a class="btn btn-primary" href="{{ url_for('genealogy.create') }}">新建族谱</a>
+    <div class="d-flex gap-2">
+        <a class="btn btn-primary" href="{{ url_for('genealogy.create') }}">新建族谱</a>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form class="row g-2 align-items-center" method="post" action="{{ url_for('genealogy.import_csv') }}" enctype="multipart/form-data">
+            <div class="col-lg-8">
+                <input class="form-control" type="file" name="csv_file" accept=".csv,text/csv" required>
+            </div>
+            <div class="col-lg-4">
+                <button class="btn btn-outline-primary w-100" type="submit">导入族谱 CSV</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 {% if genealogies %}

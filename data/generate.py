@@ -4,21 +4,89 @@ import random
 from pathlib import Path
 
 from faker import Faker
-from werkzeug.security import generate_password_hash
 
 
 OUTPUT_DIR = Path(__file__).resolve().parent / "output"
 DEFAULT_GENEALOGY_SIZES = [50000, 7000, 6500, 6200, 6000, 5800, 5600, 5400, 5200, 4300]
 FAMILY_SURNAMES = ["李", "王", "张", "刘", "陈", "杨", "赵", "黄", "周", "吴"]
-OUTSIDE_SURNAMES = ["孙", "朱", "胡", "林", "郭", "何", "高", "罗", "郑", "梁", "谢", "宋"]
+OUTSIDE_SURNAMES = [
+    "孙", "朱", "胡", "林", "郭", "何", "高", "罗", "郑", "梁", "谢", "宋"
+]
+CSV_COLUMNS = [
+    "record_type",
+    "legacy_id",
+    "name",
+    "surname",
+    "compiled_at",
+    "gender",
+    "birth_year",
+    "death_year",
+    "generation",
+    "bio",
+    "parent_legacy_id",
+    "child_legacy_id",
+    "husband_legacy_id",
+    "wife_legacy_id",
+    "start_year",
+    "end_year",
+]
 
 
-def write_csv(path, fieldnames, rows):
-    path.parent.mkdir(parents=True, exist_ok=True)
+def blank_row(record_type):
+    row = {column: "" for column in CSV_COLUMNS}
+    row["record_type"] = record_type
+    return row
+
+
+def write_genealogy_csv(output_dir, genealogy, members, parent_child, marriages):
+    output_dir.mkdir(parents=True, exist_ok=True)
+    path = output_dir / f"genealogy_{genealogy['id']}.csv"
+    member_ids = {member["id"] for member in members}
+
     with path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
         writer.writeheader()
-        writer.writerows(rows)
+
+        row = blank_row("genealogy")
+        row["name"] = genealogy["name"]
+        row["surname"] = genealogy["surname"]
+        row["compiled_at"] = genealogy["compiled_at"]
+        writer.writerow(row)
+
+        for member in members:
+            row = blank_row("member")
+            row["legacy_id"] = member["id"]
+            row["name"] = member["name"]
+            row["gender"] = member["gender"]
+            row["birth_year"] = member["birth_year"]
+            row["death_year"] = member["death_year"]
+            row["generation"] = member["generation"]
+            row["bio"] = member["bio"]
+            writer.writerow(row)
+
+        for relation in parent_child:
+            if (
+                relation["parent_id"] in member_ids
+                and relation["child_id"] in member_ids
+            ):
+                row = blank_row("parent_child")
+                row["parent_legacy_id"] = relation["parent_id"]
+                row["child_legacy_id"] = relation["child_id"]
+                writer.writerow(row)
+
+        for marriage in marriages:
+            if (
+                marriage["husband_id"] in member_ids
+                and marriage["wife_id"] in member_ids
+            ):
+                row = blank_row("marriage")
+                row["husband_legacy_id"] = marriage["husband_id"]
+                row["wife_legacy_id"] = marriage["wife_id"]
+                row["start_year"] = marriage["start_year"]
+                row["end_year"] = marriage["end_year"]
+                writer.writerow(row)
+
+    return path
 
 
 def choose_spouse_surname(family_surname):
@@ -44,19 +112,30 @@ def life_span(birth_year):
     return birth_year + random.randint(50, 92)
 
 
-def generate_dataset(output_dir, sizes, generation_count, seed):
+def choose_value(values, index, default_value):
+    if values and index < len(values):
+        return values[index]
+    return default_value
+
+
+def generate_dataset(
+    output_dir,
+    sizes,
+    generation_count,
+    seed,
+    surnames=None,
+    genealogy_names=None,
+    compiled_dates=None,
+):
     fake = Faker("zh_CN")
     Faker.seed(seed)
     random.seed(seed)
 
-    users = []
     genealogies = []
-    genealogy_users = []
     members = []
     parent_child = []
     marriages = []
 
-    user_id = 1
     genealogy_id = 1
     member_id = 1
     marriage_id = 1
@@ -91,45 +170,22 @@ def generate_dataset(output_dir, sizes, generation_count, seed):
         )
         marriage_id += 1
 
-    for i in range(1, 6):
-        username = f"user{i}"
-        users.append(
-            {
-                "id": user_id,
-                "username": username,
-                "password_hash": generate_password_hash("123456"),
-                "created_at": "2026-05-15 00:00:00",
-            }
-        )
-        user_id += 1
-
     for index, target_size in enumerate(sizes):
-        family_surname = FAMILY_SURNAMES[index % len(FAMILY_SURNAMES)]
-        creator_id = (index % len(users)) + 1
+        default_surname = FAMILY_SURNAMES[index % len(FAMILY_SURNAMES)]
+        family_surname = choose_value(surnames, index, default_surname)
+        default_name = f"{family_surname}氏族谱"
+        genealogy_name = choose_value(genealogy_names, index, default_name)
+        compiled_at = choose_value(
+            compiled_dates,
+            index,
+            f"2026-{(index % 12) + 1:02d}-01",
+        )
         genealogies.append(
             {
                 "id": genealogy_id,
-                "name": f"{family_surname}氏族谱",
+                "name": genealogy_name,
                 "surname": family_surname,
-                "compiled_at": f"2026-{(index % 12) + 1:02d}-01",
-                "creator_id": creator_id,
-                "created_at": "2026-05-15 00:00:00",
-            }
-        )
-        genealogy_users.append(
-            {
-                "genealogy_id": genealogy_id,
-                "user_id": creator_id,
-                "role": "owner",
-                "created_at": "2026-05-15 00:00:00",
-            }
-        )
-        genealogy_users.append(
-            {
-                "genealogy_id": genealogy_id,
-                "user_id": (creator_id % len(users)) + 1,
-                "role": "collaborator",
-                "created_at": "2026-05-15 00:00:00",
+                "compiled_at": compiled_at,
             }
         )
 
@@ -261,48 +317,28 @@ def generate_dataset(output_dir, sizes, generation_count, seed):
 
         genealogy_id += 1
 
-    write_csv(
-        output_dir / "users.csv",
-        ["id", "username", "password_hash", "created_at"],
-        users,
-    )
-    write_csv(
-        output_dir / "genealogies.csv",
-        ["id", "name", "surname", "compiled_at", "creator_id", "created_at"],
-        genealogies,
-    )
-    write_csv(
-        output_dir / "genealogy_users.csv",
-        ["genealogy_id", "user_id", "role", "created_at"],
-        genealogy_users,
-    )
-    write_csv(
-        output_dir / "members.csv",
-        [
-            "id",
-            "genealogy_id",
-            "name",
-            "gender",
-            "birth_year",
-            "death_year",
-            "generation",
-            "bio",
-            "created_at",
-        ],
-        members,
-    )
-    write_csv(output_dir / "parent_child.csv", ["parent_id", "child_id"], parent_child)
-    write_csv(
-        output_dir / "marriages.csv",
-        ["id", "husband_id", "wife_id", "start_year", "end_year"],
-        marriages,
-    )
+    written_paths = []
+    for genealogy in genealogies:
+        genealogy_members = [
+            member for member in members if member["genealogy_id"] == genealogy["id"]
+        ]
+        written_paths.append(
+            write_genealogy_csv(
+                output_dir,
+                genealogy,
+                genealogy_members,
+                parent_child,
+                marriages,
+            )
+        )
 
     print(f"Generated {len(genealogies)} genealogies.")
     print(f"Generated {len(members)} members.")
     print(f"Generated {len(parent_child)} parent-child rows.")
     print(f"Generated {len(marriages)} marriage rows.")
     print(f"CSV files written to {output_dir}.")
+    for path in written_paths:
+        print(path)
 
 
 def parse_args():
@@ -324,11 +360,59 @@ def parse_args():
         default=30,
         help="Generation count per genealogy.",
     )
+    parser.add_argument(
+        "--surname",
+        help="Surname for the first genealogy. Use --surnames for multiple values.",
+    )
+    parser.add_argument(
+        "--name",
+        help="Name for the first genealogy. Use --names for multiple values.",
+    )
+    parser.add_argument(
+        "--compiled-at",
+        help="Compiled date for the first genealogy, for example 2026-05-17.",
+    )
+    parser.add_argument(
+        "--surnames",
+        help="Comma-separated surnames for generated genealogies.",
+    )
+    parser.add_argument(
+        "--names",
+        help="Comma-separated genealogy names for generated genealogies.",
+    )
+    parser.add_argument(
+        "--compiled-dates",
+        help="Comma-separated compiled dates for generated genealogies.",
+    )
     parser.add_argument("--seed", type=int, default=20260515)
     return parser.parse_args()
+
+
+def parse_csv_arg(value):
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 if __name__ == "__main__":
     args = parse_args()
     sizes = [int(item.strip()) for item in args.sizes.split(",") if item.strip()]
-    generate_dataset(args.output_dir, sizes, args.generations, args.seed)
+    surnames = parse_csv_arg(args.surnames)
+    genealogy_names = parse_csv_arg(args.names)
+    compiled_dates = parse_csv_arg(args.compiled_dates)
+    if args.surname:
+        surnames = [args.surname.strip()] + surnames[1:]
+    if args.name:
+        genealogy_names = [args.name.strip()] + genealogy_names[1:]
+    if args.compiled_at:
+        compiled_dates = [args.compiled_at.strip()] + compiled_dates[1:]
+
+    generate_dataset(
+        args.output_dir,
+        sizes,
+        args.generations,
+        args.seed,
+        surnames=surnames,
+        genealogy_names=genealogy_names,
+        compiled_dates=compiled_dates,
+    )
